@@ -1,0 +1,15 @@
+{
+  "name": "schuetzen-live",
+  "version": "1.0.0",
+  "description": "Live-Ergebnisanzeige für DISAG OpticScore Ligawettkämpfe (Luftgewehr Auflage 10m)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node server.js --demo"
+  },
+  "keywords": ["disag", "opticscore", "sportschießen", "luftgewehr", "liga"],
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

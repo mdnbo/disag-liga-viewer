@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schützen-Live | Ligawettkampf</title>
+<style>
+  /* Offline fonts with system fallbacks */
+  :root {
+    --font-main: 'Outfit', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  }
+
+  /* ======== DARK THEME (default) ======== */
+  :root, [data-theme="dark"] {
+    --bg: #0b0f19;
+    --bg-card: #141a28;
+    --bg-card-alt: #181f30;
+    --bg-header: #1a2236;
+    --bg-surface: #1e2740;
+    --border: #2a3550;
+    --text: #f0f2f5;
+    --text-secondary: #94a3b8;
+    --text-dim: #556680;
+    --accent-home: #38bdf8;
+    --accent-away: #fb923c;
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.15);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.12);
+    --yellow: #facc15;
+    --yellow-bg: rgba(250,204,21,0.15);
+    --winner-bg: rgba(74,222,128,0.12);
+    --winner-border: rgba(74,222,128,0.5);
+    --loser-bg: rgba(248,113,113,0.06);
+  }
+
+  /* ======== LIGHT THEME ======== */
+  [data-theme="light"] {
+    --bg: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-alt: #f6f8fb;
+    --bg-header: #e8ecf2;
+    --bg-surface: #f0f3f7;
+    --border: #cbd5e1;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-dim: #94a3b8;
+    --accent-home: #0369a1;
+    --accent-away: #c2410c;
+    --green: #16a34a;
+    --green-bg: rgba(22,163,74,0.12);
+    --red: #dc2626;
+    --red-bg: rgba(220,38,38,0.08);
+    --yellow: #ca8a04;
+    --yellow-bg: rgba(202,138,4,0.12);
+    --winner-bg: rgba(22,163,74,0.1);
+    --winner-border: rgba(22,163,74,0.5);
+    --loser-bg: rgba(220,38,38,0.05);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+  /* ======== TOOLBAR ======== */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .toolbar-title {
+    font-size: 18px; font-weight: 700;
+    margin-right: auto;
+  }
+  .toolbar-title span { font-weight: 400; font-size: 14px; color: var(--text-secondary); margin-left: 8px; }
+  .tb-btn {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-secondary);
+    font-family: var(--font-main); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tb-btn:hover { border-color: var(--text-secondary); color: var(--text); }
+  .status-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: var(--green);
+  }
+  .status-badge.disconnected { color: var(--red); }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor; animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  /* ======== TEAM SCORE ======== */
+  .team-score {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .team-side { padding: 16px 28px; display: flex; align-items: center; }
+  .team-side.home { justify-content: flex-end; }
+  .team-side.away { justify-content: flex-start; }
+  .team-name { font-size: 20px; font-weight: 800; }
+  .team-name.home-name { color: var(--accent-home); }
+  .team-name.away-name { color: var(--accent-away); }
+  .score-center {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 14px 32px;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  }
+  .score-num {
+    font-family: var(--font-mono);
+    font-size: 48px; font-weight: 800; line-height: 1;
+  }
+  .score-num.home-pts { color: var(--accent-home); }
+  .score-num.away-pts { color: var(--accent-away); }
+  .score-colon { font-size: 36px; color: var(--text-dim); font-weight: 300; }
+
+  /* ======== DUELS ======== */
+  .duels { display: flex; flex-direction: column; gap: 10px; }
+
+  .duel-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .duel-card:nth-child(even) {
+    background: var(--bg-card-alt);
+  }
+
+  /* Duel header */
+  .duel-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 8px 20px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text-secondary); font-weight: 600;
+  }
+  .duel-label { text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+  .duel-name-home { font-size: 18px; font-weight: 800; color: var(--accent-home); letter-spacing: 0; text-transform: none; }
+  .duel-header-spacer { flex: 1; }
+  .duel-name-away { font-size: 18px; font-weight: 800; color: var(--accent-away); letter-spacing: 0; text-transform: none; }
+  .duel-status-chip {
+    padding: 3px 12px; border-radius: 100px;
+    font-size: 11px; font-weight: 700;
+    white-space: nowrap;
+  }
+  .duel-status-chip.live { background: var(--red-bg); color: var(--red); animation: pulse 1.5s ease-in-out infinite; }
+  .duel-status-chip.finished { background: var(--green-bg); color: var(--green); }
+  .duel-status-chip.shootoff { background: var(--yellow-bg); color: var(--yellow); }
+
+  /* Duel body — two shooters side by side */
+  .duel-body { display: grid; grid-template-columns: 1fr 1fr; }
+
+  .duel-shooter {
+    padding: 14px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .duel-shooter:first-child { border-right: 1px solid var(--border); }
+
+  /* Winner / Loser */
+  .duel-shooter.winner { background: var(--winner-bg); }
+  .duel-shooter.winner .shooter-total { color: var(--green) !important; }
+  .duel-shooter.loser { background: var(--loser-bg); }
+  .duel-shooter.loser .shooter-total { color: var(--text-dim) !important; }
+  .duel-shooter.loser .series-val { opacity: 0.5; }
+  .duel-shooter.loser .shooter-meta { opacity: 0.5; }
+  .duel-card.result-s1 .duel-name-home { color: var(--green) !important; }
+  .duel-card.result-s2 .duel-name-away { color: var(--green) !important; }
+  .duel-card.result-s1 .duel-name-away { color: var(--text-dim) !important; }
+  .duel-card.result-s2 .duel-name-home { color: var(--text-dim) !important; }
+
+  /* Shooter info row — total + series in one line */
+  .shooter-info {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+  .shooter-total {
+    font-family: var(--font-mono);
+    font-size: 40px; font-weight: 800;
+    flex-shrink: 0;
+    width: 4ch; text-align: center;
+  }
+  .shooter-total.home { color: var(--accent-home); }
+  .shooter-total.away { color: var(--accent-away); }
+  .shooter-meta { font-size: 13px; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; }
+  .shooter-info-spacer { flex: 1; }
+
+  /* Mobile-only shooter name — hidden on desktop */
+  .shooter-mobile-name { display: none; }
+
+  /* Away side */
+  .duel-shooter.away-side .shooter-meta { text-align: right; }
+
+  /* Series row — always 3 fixed-width slots */
+  .series-row {
+    display: flex; gap: 8px; align-items: center;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+  .series-val {
+    width: 64px; flex: none;
+    padding: 6px 0; border-radius: 8px;
+    font-size: 22px; font-weight: 800;
+    background: var(--bg-surface);
+    border: 2px solid var(--border);
+    text-align: center;
+  }
+  .series-val.series-empty {
+    visibility: hidden;
+  }
+  .series-val.series-ahead { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+  .series-val.series-tied { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow); }
+  .series-val.series-behind { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+  /* Progress bar (before first 10 shots) */
+  .progress-wrap { margin-top: 4px; }
+  .progress-track { height: 8px; background: var(--bg-surface); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; background: var(--border); }
+
+  /* Shootoff inline */
+  .shootoff-inline {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .so-label-inline {
+    font-weight: 800; color: var(--yellow);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-right: 2px;
+  }
+  .so-divider {
+    width: 0; border-left: 2px dashed var(--yellow);
+    height: 32px; margin: 0 4px; opacity: 0.4;
+  }
+  .so-bar {
+    height: 32px; min-width: 48px; padding: 0 8px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 16px; font-weight: 800;
+    color: #fff;
+  }
+  .so-bar[data-ring="10"] { background: var(--red); }
+  .so-bar[data-ring="9"] { background: var(--yellow); }
+  .so-bar[data-ring="8"], .so-bar[data-ring="7"] { background: var(--green); }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--text-secondary); }
+  .empty-state h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .empty-state p { font-size: 14px; max-width: 440px; margin: 0 auto; line-height: 1.6; }
+
+  /* Footer */
+  .footer { text-align: center; padding: 16px; font-size: 11px; color: var(--text-dim); }
+
+  /* ======== FULLSCREEN ======== */
+  .app.fullscreen {
+    max-width: 100%; padding: 10px 20px;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+  .app.fullscreen .toolbar { display: none; }
+  .app.fullscreen .team-score { margin-bottom: 8px; }
+  .app.fullscreen .team-side { padding: 18px 32px; }
+  .app.fullscreen .team-name { font-size: 26px; }
+  .app.fullscreen .score-num { font-size: 60px; }
+  .app.fullscreen .score-colon { font-size: 44px; }
+  .app.fullscreen .duels {
+    flex: 1; min-height: 0; gap: 8px;
+    display: flex; flex-direction: column;
+  }
+  .app.fullscreen .duel-card { flex: 1; display: flex; flex-direction: column; }
+  .app.fullscreen .duel-header { padding: 8px 20px; }
+  .app.fullscreen .duel-name-home,
+  .app.fullscreen .duel-name-away { font-size: 22px; }
+  .app.fullscreen .duel-body { flex: 1; }
+  .app.fullscreen .duel-shooter {
+    padding: 16px 24px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .app.fullscreen .shooter-total { font-size: 56px; }
+  .app.fullscreen .shooter-meta { font-size: 15px; }
+  .app.fullscreen .series-val { font-size: 30px; width: 80px; border-width: 3px; }
+  .app.fullscreen .so-bar { height: 40px; font-size: 20px; min-width: 60px; }
+  .app.fullscreen .so-label-inline { font-size: 13px; }
+  .app.fullscreen .duel-status-chip { font-size: 13px; padding: 4px 14px; }
+  .app.fullscreen .duel-label { font-size: 13px; }
+  .app.fullscreen .footer { display: none; }
+
+  /* Compact finished duels after timeout */
+  .duel-shooter.compact { gap: 2px; padding: 12px 24px; }
+
+  /* ======== RESPONSIVE ======== */
+  @media (min-width: 1920px) {
+    .team-name { font-size: 24px; }
+    .score-num { font-size: 60px; }
+    .duel-name-home, .duel-name-away { font-size: 22px; }
+    .shooter-total { font-size: 48px; }
+    .series-val { font-size: 28px; width: 84px; }
+  }
+
+  /* Tablet / phone landscape (under 900px) */
+  @media (max-width: 900px) {
+    .app { padding: 10px; }
+    .duel-body { grid-template-columns: 1fr; }
+    .duel-shooter:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    .duel-shooter { padding: 10px 14px; }
+
+    /* Show mobile name above each shooter's results */
+    .shooter-mobile-name {
+      display: block;
+      font-size: 13px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .home-mobile-name { color: var(--accent-home); }
+    .away-mobile-name { color: var(--accent-away); }
+    .duel-shooter.loser .shooter-mobile-name { color: var(--text-dim); }
+
+    /* Both shooters: same left-to-right layout: Meta | Serien | Total */
+    .duel-shooter.away-side .shooter-info { flex-direction: row; }
+    .duel-shooter.away-side .shooter-meta { text-align: left; }
+    /* Re-order away children via order so it matches home: meta | spacer | series | total */
+    .duel-shooter.away-side .shooter-total { order: 4; }
+    .duel-shooter.away-side .shooter-meta { order: 1; }
+    .duel-shooter.away-side .shooter-info-spacer { order: 2; }
+    .duel-shooter.away-side .series-row { order: 3; }
+
+    .shooter-total { font-size: 28px; width: 3.5ch; }
+    .series-val { font-size: 16px; width: 48px; padding: 4px 0; }
+    .shooter-meta { font-size: 12px; min-width: 55px; }
+    .duel-name-home, .duel-name-away { font-size: 14px; }
+    .duel-header { padding: 6px 12px; gap: 8px; font-size: 11px; }
+    .duel-label { font-size: 10px; }
+    .duel-status-chip { font-size: 10px; padding: 2px 8px; }
+    .team-name { font-size: 16px; }
+    .team-side { padding: 12px 16px; }
+    .score-num { font-size: 36px; }
+    .score-colon { font-size: 28px; }
+    .score-center { padding: 10px 20px; }
+    .so-bar { height: 26px; min-width: 38px; font-size: 13px; }
+    .so-label-inline { font-size: 10px; }
+  }
+
+  /* Phone portrait (under 500px) */
+  @media (max-width: 500px) {
+    .toolbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+    .toolbar-title { width: 100%; font-size: 15px; margin-bottom: 2px; }
+    .toolbar-title span { font-size: 12px; }
+    .tb-btn { font-size: 11px; padding: 5px 10px; }
+    .team-score { grid-template-columns: 1fr auto 1fr; }
+    .team-side { padding: 10px 12px; }
+    .team-name { font-size: 14px; }
+    .score-num { font-size: 30px; }
+    .score-colon { font-size: 22px; }
+    .score-center { padding: 8px 14px; gap: 8px; }
+    .duel-header { flex-wrap: wrap; gap: 4px; padding: 6px 10px; }
+    .duel-label { font-size: 9px; }
+    .duel-name-home, .duel-name-away { font-size: 13px; }
+    .shooter-total { font-size: 24px; width: 3.5ch; }
+    .series-val { font-size: 14px; width: 40px; padding: 3px 0; border-width: 1.5px; }
+    .series-row { gap: 4px; }
+    .shooter-meta { font-size: 11px; min-width: 48px; }
+    .shooter-info { gap: 6px; }
+    .duel-shooter { padding: 8px 10px; gap: 4px; }
+    .duels { gap: 8px; }
+  }
+
+  /* ======== PAIRING EDITOR ======== */
+  .pairing-editor {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .pe-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .pe-title { font-size: 14px; font-weight: 700; }
+  .pe-mode {
+    font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 100px;
+    background: var(--green-bg); color: var(--green);
+  }
+  .pe-mode.manual { background: var(--yellow-bg); color: var(--yellow); }
+  .pe-row {
+    display: grid; grid-template-columns: auto 1fr 28px 1fr auto; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pe-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); min-width: 52px; }
+  .pe-select {
+    font-family: var(--font-main); font-size: 13px;
+    padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-surface); color: var(--text);
+    width: 100%;
+  }
+  .pe-vs { text-align: center; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .pe-remove {
+    padding: 4px 8px !important; font-size: 16px !important; line-height: 1;
+    color: var(--red) !important; border-color: var(--red) !important;
+  }
+  .pe-remove:hover { background: var(--red-bg) !important; }
+  .pe-add { color: var(--green) !important; border-color: var(--green) !important; }
+  .pe-add:hover { background: var(--green-bg) !important; }
+  .pe-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .pe-save { background: var(--green-bg) !important; color: var(--green) !important; border-color: var(--green) !important; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-title">🎯 Ligawettkampf Live <span id="disciplineLabel"></span></div>
+    <button id="demoRestartBtn" class="tb-btn" onclick="restartDemo()" style="display:none">↻ Neustart</button>
+    <button class="tb-btn" onclick="togglePairingEditor()" id="pairingBtn">⚙ Paarungen</button>
+    <button class="tb-btn" onclick="toggleTheme()" id="themeBtn">☀ Hell</button>
+    <div id="status" class="status-badge disconnected">
+      <div class="status-dot"></div>
+      <span>Verbinde...</span>
+    </div>
+    <button class="tb-btn" onclick="toggleFullscreen()">⛶ Vollbild</button>
+  </div>
+
+  <!-- Pairing Editor -->
+  <div class="pairing-editor" id="pairingEditor" style="display:none">
+    <div class="pe-header">
+      <span class="pe-title">Paarungen konfigurieren</span>
+      <span class="pe-mode" id="peModeLabel">Automatisch</span>
+    </div>
+    <div id="pePairings"></div>
+    <div class="pe-actions">
+      <button class="tb-btn pe-add" onclick="addDuelRow()">+ Duell</button>
+      <div style="flex:1"></div>
+      <button class="tb-btn" onclick="resetPairings()">↻ Automatik</button>
+      <button class="tb-btn pe-save" onclick="savePairings()">Übernehmen</button>
+    </div>
+  </div>
+
+  <!-- Team Score -->
+  <div class="team-score" id="teamScore" style="display:none">
+    <div class="team-side home">
+      <div class="team-name home-name" id="homeTeamName">Heim</div>
+    </div>
+    <div class="score-center">
+      <div class="score-num home-pts" id="homePoints">0</div>
+      <div class="score-colon">:</div>
+      <div class="score-num away-pts" id="awayPoints">0</div>
+    </div>
+    <div class="team-side away">
+      <div class="team-name away-name" id="awayTeamName">Gast</div>
+    </div>
+  </div>
+
+  <!-- Duels -->
+  <div class="duels" id="duels"></div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <h2>Warte auf Daten...</h2>
+    <p>Sobald der DISAG OpticScore-Server Schussdaten per UDP-Broadcast sendet, werden die Ergebnisse hier live angezeigt.</p>
+  </div>
+
+  <div class="footer">DISAG OpticScore Live-Ergebnisanzeige</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  let ws, reconnectTimer, pollTimer, currentState = null, wsConnected = false;
+  const previousShots = {};
+  const compactTimers = {};
+
+  // ===== WebSocket =====
+  function connect() {
+    if (ws) try { ws.close(); } catch(e) {}
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try { ws = new WebSocket(`${proto}//${location.host}`); } catch(e) { startPolling(); return; }
+    ws.onopen = () => { wsConnected = true; setStatus(true); if (reconnectTimer) clearTimeout(reconnectTimer); stopPolling(); };
+    ws.onmessage = (evt) => { try { const msg = JSON.parse(evt.data); if (msg.type === 'state') { currentState = msg.data; render(msg.data); } } catch(e) {} };
+    ws.onclose = () => { wsConnected = false; setStatus(false); reconnectTimer = setTimeout(connect, 3000); };
+    ws.onerror = () => {};
+  }
+  function startPolling() {
+    if (pollTimer) return;
+    pollTimer = setInterval(async () => {
+      if (wsConnected) return;
+      try { const r = await fetch('/api/state'); if (r.ok) { const d = await r.json(); currentState = d; render(d); setStatus(true); } } catch(e) { setStatus(false); }
+    }, 2000);
+  }
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+  function setStatus(on) {
+    const el = document.getElementById('status');
+    const cls = on ? 'status-badge' : 'status-badge disconnected';
+    if (el.className !== cls) el.className = cls;
+    const sp = el.querySelector('span');
+    if (sp) { const t = on ? 'Verbunden' : 'Verbinde...'; if (sp.textContent !== t) sp.textContent = t; }
+  }
+
+  // ===== DOM helpers =====
+  function setText(el, t) { if (el && el.textContent !== String(t)) el.textContent = String(t); }
+  function setAttr(el, a, v) { if (el && el.getAttribute(a) !== String(v)) el.setAttribute(a, String(v)); }
+  function setStyle(el, p, v) { if (el && el.style[p] !== v) el.style[p] = v; }
+  function setCls(el, c) { if (el && el.className !== c) el.className = c; }
+  function shooterName(s) { return s ? `${s.Firstname || ''} ${s.Lastname || ''}`.trim() || '—' : '—'; }
+
+  // ===== RENDER =====
+  function render(state) {
+    if (!state) return;
+    window._lastState = state;
+    const ranges = state.ranges || {}, pairings = state.pairings || [], teams = state.teams || {};
+    const demoBtn = document.getElementById('demoRestartBtn');
+    if (demoBtn) setStyle(demoBtn, 'display', state.demoMode ? '' : 'none');
+
+    // Discipline
+    const discLabel = document.getElementById('disciplineLabel');
+    if (discLabel) setText(discLabel, state.discipline || '');
+
+    const rangeKeys = Object.keys(ranges);
+    const hasData = rangeKeys.length > 0;
+    setStyle(document.getElementById('emptyState'), 'display', hasData ? 'none' : '');
+    setStyle(document.getElementById('teamScore'), 'display', hasData ? '' : 'none');
+
+    const teamNames = Object.keys(teams);
+    if (teamNames.length >= 2) {
+      setText(document.getElementById('homeTeamName'), teams[teamNames[0]].name);
+      setText(document.getElementById('awayTeamName'), teams[teamNames[1]].name);
+      setText(document.getElementById('homePoints'), teams[teamNames[0]].points);
+      setText(document.getElementById('awayPoints'), teams[teamNames[1]].points);
+    }
+
+    let pairingList = pairings;
+    if (!pairingList.length && hasData) {
+      const rk = rangeKeys.map(Number).sort((a,b)=>a-b);
+      pairingList = [];
+      for (let i = 0; i < rk.length - 1; i += 2) pairingList.push({ range1: rk[i], range2: rk[i+1] });
+    }
+
+    const dc = document.getElementById('duels');
+    ensureCards(dc, pairingList.length);
+    for (let i = 0; i < pairingList.length; i++) {
+      const p = pairingList[i];
+      updateCard(dc.children[i], i+1, ranges[p.range1], p.range2 != null ? ranges[p.range2] : null, p.range1, p.range2);
+    }
+    for (const rk of rangeKeys) previousShots[rk] = (ranges[rk].shots || []).length;
+  }
+
+  // ===== CARD TEMPLATE =====
+  function ensureCards(container, count) {
+    while (container.children.length < count) {
+      const card = document.createElement('div');
+      card.className = 'duel-card';
+      card.innerHTML = `
+        <div class="duel-header">
+          <span class="duel-label"></span>
+          <span class="duel-name-home"></span>
+          <div class="duel-header-spacer"></div>
+          <span class="duel-name-away"></span>
+          <span class="duel-status-chip"></span>
+        </div>
+        <div class="duel-body">
+          <div class="duel-shooter">
+            <div class="shooter-mobile-name home-mobile-name"></div>
+            <div class="shooter-info">
+              <div class="shooter-meta"></div>
+              <div class="shooter-info-spacer"></div>
+              <div class="series-row"></div>
+              <div class="shooter-total home"></div>
+            </div>
+            <div class="shootoff-inline" style="display:none"></div>
+            <div class="progress-wrap" style="display:none"><div class="progress-track"><div class="progress-fill"></div></div></div>
+          </div>
+          <div class="duel-shooter away-side">
+            <div class="shooter-mobile-name away-mobile-name"></div>
+            <div class="shooter-info">
+              <div class="shooter-total away"></div>
+              <div class="shooter-info-spacer"></div>
+              <div class="series-row"></div>
+              <div class="shooter-meta"></div>
+            </div>
+            <div class="shootoff-inline" style="display:none"></div>
+            <div class="progress-wrap" style="display:none"><div class="progress-track"><div class="progress-fill"></div></div></div>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    }
+    while (container.children.length > count) container.removeChild(container.lastChild);
+  }
+
+  // ===== UPDATE CARD =====
+  function updateCard(card, num, r1, r2, rn1, rn2) {
+    if (!r1) return;
+    const s1 = r1, s2 = r2;
+    const s1c = s1 ? s1.shotCount : 0, s2c = s2 ? s2.shotCount : 0;
+
+    // Status
+    let status = 'live', label = 'LIVE';
+    if (s1 && s1.resultFinished && s2 && s2.resultFinished) {
+      if (s1.isShootoff || (s2 && s2.isShootoff)) { status = 'shootoff'; label = 'STECHEN'; }
+      else { status = 'finished'; label = 'BEENDET'; }
+    } else if (s1c === 0 && s2c === 0) { label = 'WARTET'; }
+    else { const p = Math.min(s1c, s2c); label = p < 10 ? 'SERIE 1' : `LIVE · ${p}/30`; }
+
+    const hdr = card.querySelector('.duel-header');
+    setText(hdr.querySelector('.duel-label'), `Duell ${num} · Stand ${rn1}${rn2 != null ? ' vs ' + rn2 : ''}`);
+    const chip = hdr.querySelector('.duel-status-chip');
+    setCls(chip, `duel-status-chip ${status}`);
+    setText(chip, label);
+    setText(hdr.querySelector('.duel-name-home'), s1 ? shooterName(s1.shooter) : '—');
+    setText(hdr.querySelector('.duel-name-away'), s2 ? shooterName(s2.shooter) : '—');
+
+    // Winner detection
+    const bothDone = s1 && s1.resultFinished && s2 && s2.resultFinished;
+    const vis = s1c >= 10 && s2c >= 10;
+    let r1w = 'none', r2w = 'none';
+    if (bothDone && s1 && s2) {
+      if (s1.totalFull > s2.totalFull) { r1w = 'winner'; r2w = 'loser'; }
+      else if (s2.totalFull > s1.totalFull) { r2w = 'winner'; r1w = 'loser'; }
+      else {
+        // Shootoff: first compare shot-by-shot with whole rings
+        const so1 = s1.shootoffShots || [], so2 = s2.shootoffShots || [];
+        const minLen = Math.min(so1.length, so2.length);
+        for (let i = 0; i < minLen; i++) {
+          // First 3 shots: whole rings. After: decimals.
+          const v1 = i < 3 ? so1[i].fullValue : so1[i].decValue;
+          const v2 = i < 3 ? so2[i].fullValue : so2[i].decValue;
+          if (v1 > v2) { r1w = 'winner'; r2w = 'loser'; break; }
+          if (v2 > v1) { r2w = 'winner'; r1w = 'loser'; break; }
+        }
+      }
+    }
+
+    let cc = 'duel-card';
+    if (r1w === 'winner') cc += ' result-s1';
+    else if (r2w === 'winner') cc += ' result-s2';
+    setCls(card, cc);
+
+    const divs = card.querySelectorAll('.duel-body > .duel-shooter');
+    const s1ser = s1 ? (s1.series || []) : [], s2ser = s2 ? (s2.series || []) : [];
+    updateShooter(divs[0], s1, 'home', vis && s1.totalFull > (s2 ? s2.totalFull : 0), s2ser, r1w, s2);
+    updateShooter(divs[1], s2, 'away', vis && s2 && s2.totalFull > s1.totalFull, s1ser, r2w, s1);
+
+    // Compact after 10s
+    if (r1w === 'winner' || r2w === 'winner') {
+      const k = `d-${rn1}-${rn2}`;
+      if (!compactTimers[k]) {
+        compactTimers[k] = setTimeout(() => { divs[0].classList.add('compact'); divs[1].classList.add('compact'); }, 10000);
+      }
+    }
+  }
+
+  // ===== UPDATE SHOOTER =====
+  function updateShooter(div, s, side, leading, oppSeries, result, opp) {
+    if (!s) return;
+    const series = s.series || [], sc = s.shotCount || 0, show = sc >= 10;
+
+    let cls = 'duel-shooter';
+    if (side === 'away') cls += ' away-side';
+    if (result === 'winner') cls += ' winner';
+    else if (result === 'loser') cls += ' loser';
+    else if (leading && show) cls += ' leading';
+    setCls(div, cls);
+
+    setText(div.querySelector('.shooter-meta'), `${sc} Schuss`);
+    setText(div.querySelector('.shooter-total'), show ? s.totalFull : '—');
+
+    // Mobile name
+    const mobileName = div.querySelector('.shooter-mobile-name');
+    if (mobileName) setText(mobileName, shooterName(s.shooter));
+
+    // Shootoff inline
+    const soEl = div.querySelector('.shootoff-inline');
+    const soShots = s.shootoffShots || [];
+    if (soShots.length > 0) {
+      setStyle(soEl, 'display', '');
+      renderSO(soEl, soShots);
+    } else {
+      setStyle(soEl, 'display', 'none');
+    }
+
+    // Progress (before 10 shots)
+    const pw = div.querySelector('.progress-wrap');
+    if (!show && sc > 0) { setStyle(pw, 'display', ''); setStyle(pw.querySelector('.progress-fill'), 'width', `${(sc/10)*100}%`); }
+    else { setStyle(pw, 'display', 'none'); }
+
+    // Series
+    const sr = div.querySelector('.series-row');
+    if (show) {
+      setStyle(sr, 'display', '');
+      ensureSeries(sr, series, oppSeries);
+    } else { setStyle(sr, 'display', 'none'); }
+  }
+
+  function ensureSeries(container, series, oppSeries) {
+    // Always 3 fixed slots
+    while (container.children.length < 3) { const s = document.createElement('span'); s.className = 'series-val series-empty'; container.appendChild(s); }
+    while (container.children.length > 3) container.removeChild(container.lastChild);
+    for (let i = 0; i < 3; i++) {
+      const el = container.children[i];
+      if (i < series.length) {
+        setText(el, series[i].fullValue);
+        let cc = 'series-val';
+        if (oppSeries && oppSeries[i]) {
+          const m = series[i].fullValue, t = oppSeries[i].fullValue;
+          if (m > t) cc += ' series-ahead'; else if (m === t) cc += ' series-tied'; else cc += ' series-behind';
+        }
+        setCls(el, cc);
+      } else {
+        setText(el, '');
+        setCls(el, 'series-val series-empty');
+      }
+    }
+  }
+
+  function renderSO(container, shots) {
+    const key = String(shots.length);
+    if (container.getAttribute('data-k') !== key) {
+      container.innerHTML = '';
+      const items = [];
+      items.push({ type: 'label' });
+      for (let i = 0; i < shots.length; i++) {
+        if (i === 3) items.push({ type: 'div' });
+        items.push({ type: 'bar', i });
+      }
+      for (const it of items) {
+        if (it.type === 'label') { const e = document.createElement('span'); e.className = 'so-label-inline'; e.textContent = 'ST'; container.appendChild(e); }
+        else if (it.type === 'div') { const e = document.createElement('div'); e.className = 'so-divider'; container.appendChild(e); }
+        else { const e = document.createElement('div'); e.className = 'so-bar'; container.appendChild(e); }
+      }
+      container.setAttribute('data-k', key);
+    }
+    const bars = container.querySelectorAll('.so-bar');
+    for (let i = 0; i < shots.length && i < bars.length; i++) {
+      const sh = shots[i], dec = i >= 3;
+      setAttr(bars[i], 'data-ring', sh.fullValue);
+      setText(bars[i], dec ? sh.decValue.toFixed(1) : String(sh.fullValue));
+    }
+  }
+
+  // Expose for restart
+  window._resetClientState = function() {
+    Object.keys(compactTimers).forEach(k => { clearTimeout(compactTimers[k]); delete compactTimers[k]; });
+    Object.keys(previousShots).forEach(k => delete previousShots[k]);
+  };
+
+  connect();
+  setTimeout(() => { if (!wsConnected) startPolling(); }, 5000);
+})();
+
+// ===== GLOBAL FUNCTIONS =====
+function toggleFullscreen() {
+  const app = document.getElementById('app');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => app.classList.add('fullscreen')).catch(() => app.classList.toggle('fullscreen'));
+  } else {
+    document.exitFullscreen().then(() => app.classList.remove('fullscreen'));
+  }
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.getElementById('app').classList.remove('fullscreen'); });
+document.addEventListener('keydown', (e) => { if ((e.key === 'f' || e.key === 'F') && e.target.tagName !== 'INPUT') toggleFullscreen(); });
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀ Hell' : '🌙 Dunkel';
+}
+
+async function restartDemo() {
+  if (window._resetClientState) window._resetClientState();
+  try { await fetch('/api/reset'); } catch(e) {}
+}
+
+// ===== PAIRING EDITOR =====
+let pairingEditorOpen = false;
+
+function togglePairingEditor() {
+  pairingEditorOpen = !pairingEditorOpen;
+  const ed = document.getElementById('pairingEditor');
+  ed.style.display = pairingEditorOpen ? '' : 'none';
+  if (pairingEditorOpen) buildPairingEditor();
+}
+
+function buildPairingEditor() {
+  const state = window._lastState;
+  if (!state) return;
+  const ranges = state.ranges || {};
+  const pairings = state.pairings || [];
+  const isManual = state.manualPairings;
+
+  const modeLabel = document.getElementById('peModeLabel');
+  modeLabel.textContent = isManual ? 'Manuell' : 'Automatisch';
+  modeLabel.className = isManual ? 'pe-mode manual' : 'pe-mode';
+
+  const container = document.getElementById('pePairings');
+  container.innerHTML = '';
+
+  // Collect all known ranges + all ranges referenced in pairings
+  const knownRanges = Object.keys(ranges).map(Number);
+  const pairedRanges = pairings.flatMap(p => [p.range1, p.range2]);
+  const allRanges = [...new Set([...knownRanges, ...pairedRanges])].sort((a, b) => a - b);
+
+  // Determine how many duel rows
+  const numDuels = Math.max(pairings.length, Math.floor(allRanges.length / 2), 1);
+
+  for (let i = 0; i < numDuels; i++) {
+    addPairingRow(container, i, pairings[i], ranges, allRanges);
+  }
+}
+
+function addPairingRow(container, index, pairing, ranges, allRanges) {
+  const row = document.createElement('div');
+  row.className = 'pe-row';
+
+  const label = document.createElement('span');
+  label.className = 'pe-label';
+  label.textContent = `Duell ${index + 1}`;
+
+  const sel1 = buildRangeSelect(ranges, allRanges, pairing ? pairing.range1 : null);
+  const vs = document.createElement('span');
+  vs.className = 'pe-vs';
+  vs.textContent = 'vs';
+  const sel2 = buildRangeSelect(ranges, allRanges, pairing ? pairing.range2 : null);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'tb-btn pe-remove';
+  removeBtn.textContent = '−';
+  removeBtn.title = 'Duell entfernen';
+  removeBtn.onclick = () => { row.remove(); renumberDuels(); };
+
+  row.appendChild(label);
+  row.appendChild(sel1);
+  row.appendChild(vs);
+  row.appendChild(sel2);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
+function buildRangeSelect(ranges, allRanges, selectedRange) {
+  const sel = document.createElement('select');
+  sel.className = 'pe-select';
+
+  // Add known ranges as options
+  for (const rn of allRanges) {
+    const r = ranges[rn];
+    const name = r ? `${(r.shooter?.Firstname || '')} ${(r.shooter?.Lastname || '')}`.trim() : '';
+    const team = r?.team?.ShortName || '';
+    const text = name ? `Stand ${rn} — ${name}${team ? ' (' + team + ')' : ''}` : `Stand ${rn}`;
+    const opt = new Option(text, rn);
+    if (rn === selectedRange) opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  // If selectedRange not in allRanges, add it
+  if (selectedRange != null && !allRanges.includes(selectedRange)) {
+    const opt = new Option(`Stand ${selectedRange}`, selectedRange);
+    opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  return sel;
+}
+
+function renumberDuels() {
+  const rows = document.querySelectorAll('#pePairings .pe-row');
+  rows.forEach((row, i) => {
+    row.querySelector('.pe-label').textContent = `Duell ${i + 1}`;
+  });
+}
+
+function addDuelRow() {
+  const state = window._lastState;
+  if (!state) return;
+  const ranges = state.ranges || {};
+  const knownRanges = Object.keys(ranges).map(Number);
+  const pairedRanges = [...document.querySelectorAll('#pePairings .pe-select')].map(s => Number(s.value));
+  const allUsed = [...new Set([...knownRanges, ...pairedRanges])].sort((a, b) => a - b);
+
+  // Find next unused stand numbers
+  const maxUsed = allUsed.length > 0 ? Math.max(...allUsed) : 0;
+  const nextR1 = maxUsed + 1;
+  const nextR2 = maxUsed + 2;
+  const allRangesForSelect = [...new Set([...allUsed, nextR1, nextR2])].sort((a, b) => a - b);
+
+  const container = document.getElementById('pePairings');
+  const index = container.children.length;
+  addPairingRow(container, index, { range1: nextR1, range2: nextR2 }, ranges, allRangesForSelect);
+}
+
+async function savePairings() {
+  const rows = document.querySelectorAll('#pePairings .pe-row');
+  const pairings = [];
+  rows.forEach(row => {
+    const sels = row.querySelectorAll('select');
+    if (sels.length === 2) {
+      pairings.push({ range1: Number(sels[0].value), range2: Number(sels[1].value) });
+    }
+  });
+  try {
+    await fetch('/api/pairings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pairings }),
+    });
+  } catch (e) { console.error('Paarungen speichern fehlgeschlagen:', e); }
+}
+
+async function resetPairings() {
+  try {
+    await fetch('/api/pairings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pairings: 'auto' }),
+    });
+  } catch (e) { console.error('Paarungen zurücksetzen fehlgeschlagen:', e); }
+}
+</script>
+</body>
+</html>

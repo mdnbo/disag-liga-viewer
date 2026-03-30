@@ -1,0 +1,17 @@
+services:
+  schuetzen-live:
+    build: .
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.schuetzen-live.rule=Host(`demo.eichner.cc`)"
+      - "traefik.http.routers.schuetzen-live.entrypoints=https"
+      - "traefik.http.routers.schuetzen-live.tls.certresolver=letsencrypt"
+      - "traefik.http.services.schuetzen-live.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik"
+
+networks:
+  traefik:
+    external: true
