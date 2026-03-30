@@ -1,6 +1,6 @@
 # DISAG Liga Viewer
 
-Live-Ergebnisanzeige für **DISAG OpticScore** Ligawettkämpfe im Sportschießen (Luftgewehr Auflage 10m).
+Live-Ergebnisanzeige für **DISAG OpticScore** Ligawettkämpfe im Sportschießen.
 
 ## Features
 
