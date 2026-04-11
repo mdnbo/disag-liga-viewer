@@ -31,6 +31,7 @@ function getArg(name, fallback) {
 const UDP_PORT = parseInt(getArg('--udp-port', '30169'), 10);
 const WEB_PORT = parseInt(getArg('--web-port', '3000'), 10);
 const DEMO_MODE = args.includes('--demo');
+const DEBUG_MODE = args.includes('--debug');
 
 // --- State ---
 const state = {
@@ -44,6 +45,8 @@ const state = {
   teams: {},
   // detected discipline
   discipline: null,
+  // league info from LeaguecompetitionStats
+  league: null,
   // raw log of last N events
   eventLog: [],
 };
@@ -82,6 +85,8 @@ function processMessage(msgObj) {
         processCompetitionEvent(range, obj);
       } else if (verb === 'RangeSettings' && obj) {
         processRangeSettings(range, obj);
+      } else if (verb === 'LeaguecompetitionStats' && obj) {
+        processLeagueStats(obj);
       }
     }
 
@@ -125,12 +130,21 @@ function processShotEvent(range, shot) {
   }
   if (shot.DiscType) {
     r.discType = shot.DiscType;
-    if (!state.discipline && DISC_NAMES[shot.DiscType]) {
-      state.discipline = DISC_NAMES[shot.DiscType];
-      console.log(`   Disziplin erkannt: ${state.discipline}`);
+    if (!state.discipline) {
+      // Prefer MenuItem name (e.g. "Liga Auflage"), fall back to DiscType mapping
+      if (shot.MenuItem && shot.MenuItem.MenuItemName) {
+        state.discipline = shot.MenuItem.MenuItemName;
+      } else if (DISC_NAMES[shot.DiscType]) {
+        state.discipline = DISC_NAMES[shot.DiscType];
+      }
+      if (state.discipline) console.log(`   Disziplin erkannt: ${state.discipline}`);
     }
   }
   if (shot.MenuItem) r.menuItem = shot.MenuItem;
+  if (shot.Competition && shot.Competition.Name && !state.competitionName) {
+    state.competitionName = shot.Competition.Name;
+    console.log(`   Wettkampf: ${state.competitionName}`);
+  }
 
   const shotData = {
     count: shot.Count,
@@ -148,12 +162,17 @@ function processShotEvent(range, shot) {
     timestamp: shot.ShotDateTime || new Date().toISOString(),
   };
 
-  if (shot.IsWarmup) return; // ignore warmup shots in scoring
+  if (shot.IsWarmup) {
+    // Register shooter for pairing detection, but don't count as scoring shot
+    updatePairings();
+    return;
+  }
 
   if (shot.IsShootoff) {
     r.isShootoff = true;
     r.shootoffShots.push(shotData);
-  } else if (shot.IsHot) {
+  } else if (shot.IsHot && !r.resultFinished) {
+    // Only add scoring shots if result isn't finished yet
     r.shots.push(shotData);
     // Recalculate totals from shots
     r.totalFull = r.shots.reduce((s, sh) => s + (sh.fullValue || 0), 0);
@@ -171,12 +190,16 @@ function processSeriesEvent(range, series) {
     if (series.Shooter.Team) r.team = series.Shooter.Team;
     if (series.Shooter.Club) r.club = series.Shooter.Club;
   }
-  r.series.push({
-    id: series.ID,
-    fullValue: series.FullValue,
-    decValue: series.DecValue,
-    seriesLength: series.SeriesLength || 10,
-  });
+  // Don't add duplicate series (check by ID)
+  const existingIds = r.series.map(s => s.id);
+  if (!existingIds.includes(series.ID)) {
+    r.series.push({
+      id: series.ID,
+      fullValue: series.FullValue,
+      decValue: series.DecValue,
+      seriesLength: series.SeriesLength || 10,
+    });
+  }
 }
 
 function processResultEvent(range, result) {
@@ -186,9 +209,13 @@ function processResultEvent(range, result) {
     if (result.Shooter.Team) r.team = result.Shooter.Team;
     if (result.Shooter.Club) r.club = result.Shooter.Club;
   }
-  r.totalFull = result.FullValue;
-  r.totalDec = result.DecValue;
-  r.shotCount = result.ShotCount;
+  // Use Result values as authoritative, but never reduce below what we've tracked
+  if (result.FullValue != null) r.totalFull = Math.max(r.totalFull, result.FullValue);
+  if (result.DecValue != null) r.totalDec = Math.max(r.totalDec, result.DecValue);
+  // Don't reduce shotCount — the default in DISAG spec is 10, which would break display
+  if (result.ShotCount != null && result.ShotCount > r.shotCount) {
+    r.shotCount = result.ShotCount;
+  }
   r.resultFinished = true;
   updatePairings();
 }
@@ -207,6 +234,20 @@ function processRangeSettings(range, settings) {
   // Store settings if needed
 }
 
+function processLeagueStats(stats) {
+  state.league = {
+    homeTeamName: stats.HomeTeamName || null,
+    guestTeamName: stats.GuestTeamName || null,
+    homeTeamPoints: stats.HomeTeamPoints || 0,
+    guestTeamPoints: stats.GuestTeamPoints || 0,
+    leagueType: stats.LeagueType || null,
+    competitionId: stats.CompetitionId || null,
+  };
+  if (DEBUG_MODE) {
+    console.log(`   Liga: ${state.league.homeTeamName} vs ${state.league.guestTeamName}`);
+  }
+}
+
 function updatePairings() {
   const rangeNums = Object.keys(state.ranges).map(Number).sort((a, b) => a - b);
 
@@ -221,21 +262,23 @@ function updatePairings() {
       }
     }
   } else {
-    // Auto-detect pairings from teams
-    const teamRanges = {};
+    // Auto-detect pairings from teams (or clubs as fallback)
+    const groupRanges = {};
     for (const rn of rangeNums) {
       const r = state.ranges[rn];
-      if (r.team && r.team.Name) {
-        if (!teamRanges[r.team.Name]) teamRanges[r.team.Name] = [];
-        teamRanges[r.team.Name].push(rn);
+      // Try Team first, then Club
+      const groupName = (r.team && r.team.Name) ? r.team.Name : (r.club && r.club.Name) ? r.club.Name : null;
+      if (groupName) {
+        if (!groupRanges[groupName]) groupRanges[groupName] = [];
+        groupRanges[groupName].push(rn);
       }
     }
 
     state.pairings = [];
-    const teamNames = Object.keys(teamRanges);
-    if (teamNames.length === 2) {
-      const team1Ranges = teamRanges[teamNames[0]].sort((a, b) => a - b);
-      const team2Ranges = teamRanges[teamNames[1]].sort((a, b) => a - b);
+    const groupNames = Object.keys(groupRanges);
+    if (groupNames.length === 2) {
+      const team1Ranges = groupRanges[groupNames[0]].sort((a, b) => a - b);
+      const team2Ranges = groupRanges[groupNames[1]].sort((a, b) => a - b);
       const pairCount = Math.min(team1Ranges.length, team2Ranges.length);
       for (let i = 0; i < pairCount; i++) {
         const r1 = state.ranges[team1Ranges[i]];
@@ -252,10 +295,11 @@ function updatePairings() {
   }
 
   // Update team scores
+  // Use LeaguecompetitionStats names if available, otherwise Team > Club > fallback
   state.teams = {};
   for (const p of state.pairings) {
-    const t1Name = p.shooter1.team?.Name || 'Heim';
-    const t2Name = p.shooter2.team?.Name || 'Gast';
+    const t1Name = p.shooter1.team?.Name || p.shooter1.club?.Name || 'Heim';
+    const t2Name = p.shooter2.team?.Name || p.shooter2.club?.Name || 'Gast';
     if (!state.teams[t1Name]) state.teams[t1Name] = { name: t1Name, points: 0, totalRings: 0 };
     if (!state.teams[t2Name]) state.teams[t2Name] = { name: t2Name, points: 0, totalRings: 0 };
 
@@ -287,13 +331,8 @@ function updatePairings() {
 }
 
 function getClientState() {
-  // Only include ranges that have a team assignment (filters out training shooters)
-  const filteredRanges = {};
-  for (const [k, r] of Object.entries(state.ranges)) {
-    if (r.team) filteredRanges[k] = r;
-  }
   return {
-    ranges: filteredRanges,
+    ranges: state.ranges,
     pairings: state.pairings.map(p => ({
       range1: p.range1,
       range2: p.range2,
@@ -301,10 +340,29 @@ function getClientState() {
     teams: state.teams,
     manualPairings: state.manualPairings !== null,
     discipline: state.discipline,
+    league: state.league,
     demoMode: DEMO_MODE,
+    debugMode: DEBUG_MODE,
     timestamp: new Date().toISOString(),
   };
 }
+
+// --- Debug Logging ---
+let debugLogStream = null;
+if (DEBUG_MODE) {
+  const logFile = path.join(__dirname, `debug-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+  debugLogStream = fs.createWriteStream(logFile, { flags: 'a' });
+  console.log(`🔍 Debug-Modus aktiv — Log: ${logFile}`);
+}
+
+function debugLog(direction, data) {
+  if (!debugLogStream) return;
+  const line = JSON.stringify({ time: new Date().toISOString(), dir: direction, data }) + '\n';
+  debugLogStream.write(line);
+}
+
+// Recent raw messages for debug panel in browser
+const debugMessages = [];
 
 // --- UDP Listener ---
 const udpSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
@@ -313,6 +371,15 @@ udpSocket.on('message', (msg, rinfo) => {
   try {
     const text = msg.toString('utf8').trim();
     if (!text) return;
+
+    // Debug: log raw message
+    if (DEBUG_MODE) {
+      debugLog('udp-in', text);
+      // Keep last 100 raw messages for browser debug panel
+      debugMessages.push({ time: new Date().toISOString(), from: `${rinfo.address}:${rinfo.port}`, raw: text });
+      if (debugMessages.length > 100) debugMessages.shift();
+    }
+
     const parsed = JSON.parse(text);
     processMessage(parsed);
     broadcastToClients();
@@ -388,6 +455,12 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+  } else if (req.url === '/api/debug' && DEBUG_MODE) {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({
+      debugMessages,
+      rawState: state,
+    }));
   } else {
     res.writeHead(404);
     res.end('Not found');
@@ -421,10 +494,11 @@ function broadcastToClients() {
 }
 
 server.listen(WEB_PORT, '0.0.0.0', () => {
-  console.log(`\n🎯 Schützen-Live Ergebnisanzeige`);
+  console.log(`\n🎯 DISAG Liga Viewer`);
   console.log(`   Web-Oberfläche: http://localhost:${WEB_PORT}`);
   console.log(`   UDP-Port:       ${UDP_PORT}`);
   console.log(`   Demo-Modus:     ${DEMO_MODE ? 'AN' : 'AUS'}`);
+  console.log(`   Debug-Modus:    ${DEBUG_MODE ? 'AN' : 'AUS'}`);
   console.log(`\n   Zum Stoppen: Strg+C\n`);
 });
 

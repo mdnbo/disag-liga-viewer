@@ -140,6 +140,29 @@ echo.
 pause
 BAT_EOF
 
+# start-debug.bat — Echtbetrieb mit Debug
+cat > "$BUNDLE_DIR/start-debug.bat" << 'BAT_EOF'
+@echo off
+chcp 65001 >nul
+title DISAG Liga Viewer — Debug
+echo.
+echo ============================================
+echo   DISAG Liga Viewer — Debug-Modus
+echo ============================================
+echo.
+echo   Debug-Log wird geschrieben in:
+echo   %~dp0debug-*.log
+echo.
+echo   Browser oeffnen: http://localhost:3000
+echo   Debug-Panel am Ende der Seite aufklappen!
+echo.
+echo   Zum Beenden: Strg+C oder Fenster schliessen
+echo.
+
+"%~dp0nodejs\node.exe" "%~dp0server.js" --debug
+pause
+BAT_EOF
+
 # install-fonts.bat — Fonts installieren (optional)
 cat > "$BUNDLE_DIR/install-fonts.bat" << 'BAT_EOF'
 @echo off

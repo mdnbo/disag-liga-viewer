@@ -9,6 +9,7 @@
   :root {
     --font-main: 'Outfit', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    --font-num: 'Outfit', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   }
 
   /* ======== DARK THEME (default) ======== */
@@ -24,15 +25,15 @@
     --text-dim: #556680;
     --accent-home: #38bdf8;
     --accent-away: #fb923c;
-    --green: #4ade80;
-    --green-bg: rgba(74,222,128,0.15);
-    --red: #f87171;
-    --red-bg: rgba(248,113,113,0.12);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.18);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.15);
     --yellow: #facc15;
     --yellow-bg: rgba(250,204,21,0.15);
-    --winner-bg: rgba(74,222,128,0.12);
-    --winner-border: rgba(74,222,128,0.5);
-    --loser-bg: rgba(248,113,113,0.06);
+    --winner-bg: rgba(34,197,94,0.14);
+    --winner-border: rgba(34,197,94,0.5);
+    --loser-bg: rgba(239,68,68,0.08);
   }
 
   /* ======== LIGHT THEME ======== */
@@ -48,15 +49,15 @@
     --text-dim: #94a3b8;
     --accent-home: #0369a1;
     --accent-away: #c2410c;
-    --green: #16a34a;
-    --green-bg: rgba(22,163,74,0.12);
+    --green: #15803d;
+    --green-bg: rgba(21,128,61,0.15);
     --red: #dc2626;
-    --red-bg: rgba(220,38,38,0.08);
-    --yellow: #ca8a04;
-    --yellow-bg: rgba(202,138,4,0.12);
-    --winner-bg: rgba(22,163,74,0.1);
-    --winner-border: rgba(22,163,74,0.5);
-    --loser-bg: rgba(220,38,38,0.05);
+    --red-bg: rgba(220,38,38,0.10);
+    --yellow: #a16207;
+    --yellow-bg: rgba(161,98,7,0.12);
+    --winner-bg: rgba(21,128,61,0.12);
+    --winner-border: rgba(21,128,61,0.5);
+    --loser-bg: rgba(220,38,38,0.06);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -125,7 +126,8 @@
     border-left: 1px solid var(--border); border-right: 1px solid var(--border);
   }
   .score-num {
-    font-family: var(--font-mono);
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
     font-size: 48px; font-weight: 800; line-height: 1;
   }
   .score-num.home-pts { color: var(--accent-home); }
@@ -144,6 +146,13 @@
   .duel-card:nth-child(even) {
     background: var(--bg-card-alt);
   }
+  /* Once result is decided, use consistent card background */
+  .duel-card.result-s1,
+  .duel-card.result-s2,
+  .duel-card.result-s1:nth-child(even),
+  .duel-card.result-s2:nth-child(even) {
+    background: var(--bg-card);
+  }
 
   /* Duel header */
   .duel-header {
@@ -154,9 +163,9 @@
     font-size: 12px; color: var(--text-secondary); font-weight: 600;
   }
   .duel-label { text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
-  .duel-name-home { font-size: 18px; font-weight: 800; color: var(--accent-home); letter-spacing: 0; text-transform: none; }
+  .duel-name-home { font-size: 24px; font-weight: 800; color: var(--accent-home); letter-spacing: 0; text-transform: none; }
   .duel-header-spacer { flex: 1; }
-  .duel-name-away { font-size: 18px; font-weight: 800; color: var(--accent-away); letter-spacing: 0; text-transform: none; }
+  .duel-name-away { font-size: 24px; font-weight: 800; color: var(--accent-away); letter-spacing: 0; text-transform: none; }
   .duel-status-chip {
     padding: 3px 12px; border-radius: 100px;
     font-size: 11px; font-weight: 700;
@@ -193,14 +202,15 @@
     gap: 12px;
   }
   .shooter-total {
-    font-family: var(--font-mono);
-    font-size: 40px; font-weight: 800;
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 48px; font-weight: 800;
     flex-shrink: 0;
     width: 4ch; text-align: center;
   }
   .shooter-total.home { color: var(--accent-home); }
   .shooter-total.away { color: var(--accent-away); }
-  .shooter-meta { font-size: 13px; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; }
+  .shooter-meta { display: none; }
   .shooter-info-spacer { flex: 1; }
 
   /* Mobile-only shooter name — hidden on desktop */
@@ -211,24 +221,25 @@
 
   /* Series row — always 3 fixed-width slots */
   .series-row {
-    display: flex; gap: 8px; align-items: center;
-    font-family: var(--font-mono);
+    display: flex; gap: 32px; align-items: center;
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
   .series-val {
-    width: 64px; flex: none;
-    padding: 6px 0; border-radius: 8px;
-    font-size: 22px; font-weight: 800;
-    background: var(--bg-surface);
-    border: 2px solid var(--border);
+    width: 3ch; flex: none;
+    padding: 0;
+    font-size: 54px; font-weight: 800;
     text-align: center;
+    color: var(--text);
   }
   .series-val.series-empty {
     visibility: hidden;
   }
-  .series-val.series-ahead { background: var(--green-bg); color: var(--green); border-color: var(--green); }
-  .series-val.series-tied { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow); }
-  .series-val.series-behind { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+  .series-val.series-ahead { color: var(--green); }
+  .series-val.series-tied { color: var(--yellow); }
+  .series-val.series-behind { color: var(--red); }
+  .series-val.series-partial { color: var(--text); opacity: 0.7; }
 
   /* Progress bar (before first 10 shots) */
   .progress-wrap { margin-top: 4px; }
@@ -241,19 +252,20 @@
   }
   .so-label-inline {
     font-weight: 800; color: var(--yellow);
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-    margin-right: 2px;
+    font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-right: 4px;
   }
   .so-divider {
     width: 0; border-left: 2px dashed var(--yellow);
-    height: 32px; margin: 0 4px; opacity: 0.4;
+    height: 48px; margin: 0 6px; opacity: 0.4;
   }
   .so-bar {
-    height: 32px; min-width: 48px; padding: 0 8px;
-    border-radius: 6px;
+    height: 48px; min-width: 72px; padding: 0 10px;
+    border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-mono);
-    font-size: 16px; font-weight: 800;
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 24px; font-weight: 800;
     color: #fff;
   }
   .so-bar[data-ring="10"] { background: var(--red); }
@@ -286,17 +298,18 @@
   .app.fullscreen .duel-card { flex: 1; display: flex; flex-direction: column; }
   .app.fullscreen .duel-header { padding: 8px 20px; }
   .app.fullscreen .duel-name-home,
-  .app.fullscreen .duel-name-away { font-size: 22px; }
+  .app.fullscreen .duel-name-away { font-size: 28px; }
   .app.fullscreen .duel-body { flex: 1; }
   .app.fullscreen .duel-shooter {
     padding: 16px 24px;
     display: flex; flex-direction: column; justify-content: center;
   }
-  .app.fullscreen .shooter-total { font-size: 56px; }
+  .app.fullscreen .shooter-total { font-size: 64px; }
   .app.fullscreen .shooter-meta { font-size: 15px; }
-  .app.fullscreen .series-val { font-size: 30px; width: 80px; border-width: 3px; }
-  .app.fullscreen .so-bar { height: 40px; font-size: 20px; min-width: 60px; }
-  .app.fullscreen .so-label-inline { font-size: 13px; }
+  .app.fullscreen .series-val { font-size: 66px; }
+  .app.fullscreen .so-bar { height: 60px; font-size: 30px; min-width: 90px; }
+  .app.fullscreen .so-label-inline { font-size: 18px; }
+  .app.fullscreen .so-divider { height: 60px; }
   .app.fullscreen .duel-status-chip { font-size: 13px; padding: 4px 14px; }
   .app.fullscreen .duel-label { font-size: 13px; }
   .app.fullscreen .footer { display: none; }
@@ -308,9 +321,9 @@
   @media (min-width: 1920px) {
     .team-name { font-size: 24px; }
     .score-num { font-size: 60px; }
-    .duel-name-home, .duel-name-away { font-size: 22px; }
-    .shooter-total { font-size: 48px; }
-    .series-val { font-size: 28px; width: 84px; }
+    .duel-name-home, .duel-name-away { font-size: 28px; }
+    .shooter-total { font-size: 56px; }
+    .series-val { font-size: 63px; }
   }
 
   /* Tablet / phone landscape (under 900px) */
@@ -333,14 +346,15 @@
     /* Both shooters: same left-to-right layout: Meta | Serien | Total */
     .duel-shooter.away-side .shooter-info { flex-direction: row; }
     .duel-shooter.away-side .shooter-meta { text-align: left; }
-    /* Re-order away children via order so it matches home: meta | spacer | series | total */
+    /* Re-order away children via order so it matches home: meta | series/shootoff | spacer | total */
     .duel-shooter.away-side .shooter-total { order: 4; }
     .duel-shooter.away-side .shooter-meta { order: 1; }
-    .duel-shooter.away-side .shooter-info-spacer { order: 2; }
-    .duel-shooter.away-side .series-row { order: 3; }
+    .duel-shooter.away-side .series-row { order: 2; }
+    .duel-shooter.away-side .shootoff-inline { order: 2; }
+    .duel-shooter.away-side .shooter-info-spacer { order: 3; }
 
     .shooter-total { font-size: 28px; width: 3.5ch; }
-    .series-val { font-size: 16px; width: 48px; padding: 4px 0; }
+    .series-val { font-size: 30px; }
     .shooter-meta { font-size: 12px; min-width: 55px; }
     .duel-name-home, .duel-name-away { font-size: 14px; }
     .duel-header { padding: 6px 12px; gap: 8px; font-size: 11px; }
@@ -351,8 +365,8 @@
     .score-num { font-size: 36px; }
     .score-colon { font-size: 28px; }
     .score-center { padding: 10px 20px; }
-    .so-bar { height: 26px; min-width: 38px; font-size: 13px; }
-    .so-label-inline { font-size: 10px; }
+    .so-bar { height: 36px; min-width: 52px; font-size: 18px; }
+    .so-label-inline { font-size: 12px; }
   }
 
   /* Phone portrait (under 500px) */
@@ -371,8 +385,8 @@
     .duel-label { font-size: 9px; }
     .duel-name-home, .duel-name-away { font-size: 13px; }
     .shooter-total { font-size: 24px; width: 3.5ch; }
-    .series-val { font-size: 14px; width: 40px; padding: 3px 0; border-width: 1.5px; }
-    .series-row { gap: 4px; }
+    .series-val { font-size: 24px; }
+    .series-row { gap: 16px; }
     .shooter-meta { font-size: 11px; min-width: 48px; }
     .shooter-info { gap: 6px; }
     .duel-shooter { padding: 8px 10px; gap: 4px; }
@@ -423,6 +437,44 @@
     border-top: 1px solid var(--border);
   }
   .pe-save { background: var(--green-bg) !important; color: var(--green) !important; border-color: var(--green) !important; }
+
+  /* ======== DEBUG PANEL ======== */
+  .debug-panel {
+    background: var(--bg-card);
+    border: 2px solid var(--yellow);
+    border-radius: 12px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .debug-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    background: var(--yellow-bg);
+    cursor: pointer;
+    font-size: 13px; font-weight: 700; color: var(--yellow);
+  }
+  .debug-header span:nth-child(2) {
+    background: var(--yellow); color: var(--bg); padding: 1px 8px;
+    border-radius: 100px; font-size: 11px; font-weight: 800;
+  }
+  .debug-body { padding: 12px 16px; max-height: 500px; overflow-y: auto; }
+  .debug-state {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--bg-surface); padding: 10px;
+    border-radius: 8px; margin-bottom: 10px;
+    white-space: pre-wrap; word-break: break-all;
+    color: var(--text-secondary); max-height: 200px; overflow-y: auto;
+  }
+  .debug-messages { display: flex; flex-direction: column; gap: 4px; }
+  .debug-msg {
+    font-family: var(--font-mono); font-size: 11px;
+    background: var(--bg-surface); padding: 6px 10px;
+    border-radius: 6px; border-left: 3px solid var(--border);
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .debug-msg .dm-time { color: var(--text-dim); margin-right: 8px; }
+  .debug-msg .dm-verb { color: var(--yellow); font-weight: 700; margin-right: 6px; }
+  .debug-msg .dm-range { color: var(--accent-home); margin-right: 6px; }
 </style>
 </head>
 <body>
@@ -478,6 +530,20 @@
   <div class="empty-state" id="emptyState">
     <h2>Warte auf Daten...</h2>
     <p>Sobald der DISAG OpticScore-Server Schussdaten per UDP-Broadcast sendet, werden die Ergebnisse hier live angezeigt.</p>
+  </div>
+
+  <!-- Debug Panel (only visible in debug mode) -->
+  <div class="debug-panel" id="debugPanel" style="display:none">
+    <div class="debug-header" onclick="toggleDebugPanel()">
+      <span>🔍 Debug — Rohe JSON-Nachrichten</span>
+      <span id="debugCount">0</span>
+      <button class="tb-btn" onclick="event.stopPropagation(); refreshDebug()" style="font-size:11px;padding:3px 8px;">Aktualisieren</button>
+      <button class="tb-btn" onclick="event.stopPropagation(); downloadDebug()" style="font-size:11px;padding:3px 8px;">⬇ Log herunterladen</button>
+    </div>
+    <div class="debug-body" id="debugBody" style="display:none">
+      <div class="debug-state" id="debugState"></div>
+      <div class="debug-messages" id="debugMessages"></div>
+    </div>
   </div>
 
   <div class="footer">DISAG OpticScore Live-Ergebnisanzeige</div>
@@ -537,17 +603,30 @@
     const discLabel = document.getElementById('disciplineLabel');
     if (discLabel) setText(discLabel, state.discipline || '');
 
+    // Debug panel visibility
+    const debugPanel = document.getElementById('debugPanel');
+    if (debugPanel) setStyle(debugPanel, 'display', state.debugMode ? '' : 'none');
+
     const rangeKeys = Object.keys(ranges);
     const hasData = rangeKeys.length > 0;
     setStyle(document.getElementById('emptyState'), 'display', hasData ? 'none' : '');
     setStyle(document.getElementById('teamScore'), 'display', hasData ? '' : 'none');
 
     const teamNames = Object.keys(teams);
+    const league = state.league;
     if (teamNames.length >= 2) {
-      setText(document.getElementById('homeTeamName'), teams[teamNames[0]].name);
-      setText(document.getElementById('awayTeamName'), teams[teamNames[1]].name);
+      // Prefer league names from LeaguecompetitionStats if available
+      const homeName = league?.homeTeamName || teams[teamNames[0]].name;
+      const awayName = league?.guestTeamName || teams[teamNames[1]].name;
+      setText(document.getElementById('homeTeamName'), homeName);
+      setText(document.getElementById('awayTeamName'), awayName);
       setText(document.getElementById('homePoints'), teams[teamNames[0]].points);
       setText(document.getElementById('awayPoints'), teams[teamNames[1]].points);
+    } else if (league?.homeTeamName) {
+      // Show league names even before pairings are formed
+      setStyle(document.getElementById('teamScore'), 'display', '');
+      setText(document.getElementById('homeTeamName'), league.homeTeamName);
+      setText(document.getElementById('awayTeamName'), league.guestTeamName);
     }
 
     let pairingList = pairings;
@@ -584,11 +663,11 @@
             <div class="shooter-mobile-name home-mobile-name"></div>
             <div class="shooter-info">
               <div class="shooter-meta"></div>
-              <div class="shooter-info-spacer"></div>
               <div class="series-row"></div>
+              <div class="shootoff-inline" style="display:none"></div>
+              <div class="shooter-info-spacer"></div>
               <div class="shooter-total home"></div>
             </div>
-            <div class="shootoff-inline" style="display:none"></div>
             <div class="progress-wrap" style="display:none"><div class="progress-track"><div class="progress-fill"></div></div></div>
           </div>
           <div class="duel-shooter away-side">
@@ -597,9 +676,9 @@
               <div class="shooter-total away"></div>
               <div class="shooter-info-spacer"></div>
               <div class="series-row"></div>
+              <div class="shootoff-inline" style="display:none"></div>
               <div class="shooter-meta"></div>
             </div>
-            <div class="shootoff-inline" style="display:none"></div>
             <div class="progress-wrap" style="display:none"><div class="progress-track"><div class="progress-fill"></div></div></div>
           </div>
         </div>`;
@@ -619,7 +698,11 @@
     if (s1 && s1.resultFinished && s2 && s2.resultFinished) {
       if (s1.isShootoff || (s2 && s2.isShootoff)) { status = 'shootoff'; label = 'STECHEN'; }
       else { status = 'finished'; label = 'BEENDET'; }
-    } else if (s1c === 0 && s2c === 0) { label = 'WARTET'; }
+    } else if (s1c === 0 && s2c === 0) {
+      // Check if shooters are already known (from warmup shots)
+      const hasShooters = (s1 && s1.shooter) || (s2 && s2.shooter);
+      label = hasShooters ? 'PROBE' : 'WARTET';
+    }
     else { const p = Math.min(s1c, s2c); label = p < 10 ? 'SERIE 1' : `LIVE · ${p}/30`; }
 
     const hdr = card.querySelector('.duel-header');
@@ -689,10 +772,11 @@
     const mobileName = div.querySelector('.shooter-mobile-name');
     if (mobileName) setText(mobileName, shooterName(s.shooter));
 
-    // Shootoff inline
+    // Shootoff inline — replaces series when active
     const soEl = div.querySelector('.shootoff-inline');
     const soShots = s.shootoffShots || [];
-    if (soShots.length > 0) {
+    const hasShootoff = soShots.length > 0;
+    if (hasShootoff) {
       setStyle(soEl, 'display', '');
       renderSO(soEl, soShots);
     } else {
@@ -704,11 +788,22 @@
     if (!show && sc > 0) { setStyle(pw, 'display', ''); setStyle(pw.querySelector('.progress-fill'), 'width', `${(sc/10)*100}%`); }
     else { setStyle(pw, 'display', 'none'); }
 
-    // Series
+    // Series — hidden during shootoff
     const sr = div.querySelector('.series-row');
-    if (show) {
+    if (show && !hasShootoff) {
       setStyle(sr, 'display', '');
-      ensureSeries(sr, series, oppSeries);
+      // Build display series: completed series + partial current series
+      const shots = s.shots || [];
+      const completedCount = series.length;
+      const shotsInCurrentSeries = shots.length - (completedCount * 10);
+      let displaySeries = [...series];
+      // Add partial series if we're mid-series (series 2 or 3)
+      if (completedCount > 0 && completedCount < 3 && shotsInCurrentSeries > 0) {
+        const partialShots = shots.slice(completedCount * 10);
+        const partialFull = partialShots.reduce((sum, sh) => sum + (sh.fullValue || 0), 0);
+        displaySeries.push({ fullValue: partialFull, partial: true });
+      }
+      ensureSeries(sr, displaySeries, oppSeries);
     } else { setStyle(sr, 'display', 'none'); }
   }
 
@@ -721,7 +816,10 @@
       if (i < series.length) {
         setText(el, series[i].fullValue);
         let cc = 'series-val';
-        if (oppSeries && oppSeries[i]) {
+        if (series[i].partial) {
+          // Partial (in-progress) series: show in neutral/white
+          cc += ' series-partial';
+        } else if (oppSeries && oppSeries[i] && !oppSeries[i].partial) {
           const m = series[i].fullValue, t = oppSeries[i].fullValue;
           if (m > t) cc += ' series-ahead'; else if (m === t) cc += ' series-tied'; else cc += ' series-behind';
         }
@@ -935,6 +1033,83 @@ async function resetPairings() {
       body: JSON.stringify({ pairings: 'auto' }),
     });
   } catch (e) { console.error('Paarungen zurücksetzen fehlgeschlagen:', e); }
+}
+
+// ===== DEBUG PANEL =====
+let debugBodyOpen = false;
+
+function toggleDebugPanel() {
+  debugBodyOpen = !debugBodyOpen;
+  const body = document.getElementById('debugBody');
+  body.style.display = debugBodyOpen ? '' : 'none';
+  if (debugBodyOpen) refreshDebug();
+}
+
+async function refreshDebug() {
+  try {
+    const resp = await fetch('/api/debug');
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    // Show current parsed state summary
+    const stateEl = document.getElementById('debugState');
+    const s = data.rawState;
+    const rangeKeys = Object.keys(s.ranges || {});
+    let summary = `Ranges: ${rangeKeys.join(', ') || 'keine'}\n`;
+    summary += `Pairings: ${(s.pairings || []).map(p => p.range1 + ' vs ' + p.range2).join(', ') || 'keine'}\n`;
+    summary += `ManualPairings: ${s.manualPairings ? 'ja' : 'nein'}\n`;
+    summary += `Teams: ${JSON.stringify(s.teams, null, 1)}\n`;
+    summary += `Discipline: ${s.discipline || 'unbekannt'}\n\n`;
+    for (const rk of rangeKeys) {
+      const r = s.ranges[rk];
+      summary += `--- Stand ${rk} ---\n`;
+      summary += `  Shooter: ${JSON.stringify(r.shooter)}\n`;
+      summary += `  Team: ${JSON.stringify(r.team)}\n`;
+      summary += `  Club: ${JSON.stringify(r.club)}\n`;
+      summary += `  Shots: ${r.shotCount}, Series: ${(r.series||[]).length}, Total: ${r.totalFull}\n`;
+      summary += `  ResultFinished: ${r.resultFinished}, DiscType: ${r.discType}\n\n`;
+    }
+    stateEl.textContent = summary;
+
+    // Show raw messages
+    const msgsEl = document.getElementById('debugMessages');
+    const countEl = document.getElementById('debugCount');
+    const msgs = data.debugMessages || [];
+    countEl.textContent = String(msgs.length);
+    msgsEl.innerHTML = '';
+    // Show newest first
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i];
+      const div = document.createElement('div');
+      div.className = 'debug-msg';
+      let parsed;
+      try { parsed = JSON.parse(m.raw); } catch(e) { parsed = null; }
+      const verb = parsed?.MessageVerb || '?';
+      const range = parsed?.Ranges ?? '?';
+      const time = m.time.split('T')[1]?.split('.')[0] || m.time;
+      div.innerHTML = `<span class="dm-time">${time}</span><span class="dm-verb">${verb}</span><span class="dm-range">Stand ${range}</span>\n${m.raw}`;
+      msgsEl.appendChild(div);
+    }
+  } catch(e) {
+    console.error('Debug-Daten laden fehlgeschlagen:', e);
+  }
+}
+
+async function downloadDebug() {
+  try {
+    const resp = await fetch('/api/debug');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `disag-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    console.error('Debug-Download fehlgeschlagen:', e);
+  }
 }
 </script>
 </body>
