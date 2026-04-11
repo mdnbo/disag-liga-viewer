@@ -1,6 +1,6 @@
-# 🎯 Schützen-Live — Ligawettkampf Ergebnisanzeige
+# DISAG Liga Viewer
 
-Live-Ergebnisanzeige für **DISAG OpticScore** Ligawettkämpfe im Sportschießen (Luftgewehr Auflage 10m).
+Live-Ergebnisanzeige für **DISAG OpticScore** Ligawettkämpfe im Sportschießen.
 
 ## Features
 
@@ -222,6 +222,10 @@ DISAG OpticScore Server
 - Oder Fonts manuell nach `~/.local/share/fonts/` kopieren
 - Die App funktioniert auch ohne die Fonts (System-Fallbacks greifen)
 
+## Vibe-Coding-Hinweis
+Bei der Entwicklung dieser Software kamen KI-Agenten unterstützend zum Einsatz.
+
 ## Lizenz
 
 MIT
+
